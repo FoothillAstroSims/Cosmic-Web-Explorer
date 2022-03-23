@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+    
+    <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+        <title>Foothill AstroSims 3D Explorer DRAFT</title>
+        
+        <!-- load variable stellarSpectra -->
+        <script src="objectSets.js" ></script>
+
+
+    </head>
+    
+
+    <body>
+
+        <div id="headerPanel" class="full-width">
+            <h2><a href="https://foothill.edu/astronomy/astrosims.html" target=_blank>AstroSims</a> > 3D Explorer DRAFT</h2>
+        </div>
+    
+    
+        
+
+        <script type="module">
+
+            console.log('galaxies: ', galaxies);
+            console.log(galaxies.x[0], galaxies.y[0], galaxies.z[0]);
+            
+            console.log('importing tools...');
+
+            console.log('importing three.js');
+            import * as THREE from 'https://cdn.skypack.dev/three@0.132.2';
+            //import * as JSM from 'https://cdn.skypack.dev/jsm';
+
+			//import Stats from './jsm/libs/stats.module.js';
+
+			//import * as GUI from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/libs/lil-gui.module.min.js';
+            console.log('importing lil-gui.js')
+			import  GUI  from 'https://cdn.skypack.dev/lil-gui@0.16.1/dist/lil-gui.umd.min.js';
+            console.log('importing OrbitControls')
+			import { OrbitControls } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/controls/OrbitControls.js';
+			//import { LineMaterial } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/lines/LineMaterial.js';
+			//import { Wireframe } from 'https://cdn.skypack.dev/three@0.132.2/examples//jsm/lines/Wireframe.js';
+			//import { WireframeGeometry2 } from 'https://cdn.skypack.dev/three@0.132.2/examples//jsm/lines/WireframeGeometry2.js';
+
+            
+            console.log('tools imported')
+            
+            const WIDTH = 64;
+
+			let container;
+			let geometry;
+
+			const PARTICLES = 10000;
+
+			let renderer, scene, camera, camera2, controls;
+			let gui;
+
+            let positionVariable;
+			let particleUniforms;
+			let effectController;
+
+
+            // viewport
+			let insetWidth;
+			let insetHeight;
+      
+            init();
+			animate();
+            
+			function init() {
+
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setClearColor( 0x000000, 0.0 );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );
+
+				scene = new THREE.Scene();
+
+				camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 1000 );
+				camera.position.set( - 50, 0, 50 );
+
+				//camera2 = new THREE.PerspectiveCamera( 40, 1, 1, 1000 );
+				//camera2.position.copy( camera.position );
+
+				controls = new OrbitControls( camera, renderer.domElement );
+				controls.minDistance = 10;
+				controls.maxDistance = 500;
+
+
+
+				window.addEventListener( 'resize', onWindowResize );
+				onWindowResize();
+
+				//stats = new Stats();
+				//document.body.appendChild( stats.dom );
+
+				//initGui();
+
+				initParticles();
+                
+			}
+
+
+            function initParticles() {
+                //let geometry = new THREE.SphereGeometry( 0.2, 16, 8 );
+                let geometry = new THREE.BufferGeometry();
+                let material = new THREE.PointsMaterial( { color: 0x08ff00, size: 0.2 } );
+                //let sphere = new THREE.Mesh( geometry, material );
+                
+                const positions = new Float32Array( PARTICLES * 3 );
+				let p = 0;
+
+				for ( let i = 0; i < PARTICLES; i ++ ) {
+
+					//positions[ p ++ ] = ( Math.random() * 2 - 1 ) * 60.0;
+					//positions[ p ++ ] = 0; //( Math.random() * 2 - 1 ) * effectController.radius;
+					//positions[ p ++ ] = ( Math.random() * 2 - 1 ) * 60.0;
+					positions[ p ++ ] = galaxies.x[i];
+					positions[ p ++ ] = galaxies.z[i]; 
+					positions[ p ++ ] = galaxies.y[i];
+
+				}
+                //console.log(positions);
+                
+                const uvs = new Float32Array( PARTICLES * 2 );
+				p = 0;
+				for ( let j = 0; j < WIDTH; j ++ ) {
+					for ( let i = 0; i < WIDTH; i ++ ) {
+						uvs[ p ++ ] = i / ( WIDTH - 1 );
+						uvs[ p ++ ] = j / ( WIDTH - 1 );
+					}
+				}
+                
+                geometry.setAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
+				geometry.setAttribute( 'uv', new THREE.BufferAttribute( uvs, 2 ) );
+                //console.log(geometry);
+                
+				const particles = new THREE.Points( geometry, material );
+                console.log(particles);
+                
+                scene.add( particles );                
+            }
+
+    
+            function initParticlesMULTI() {
+                
+				let geometry = new THREE.SphereGeometry(5);
+
+                let material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
+                const sphere = new THREE.Mesh( geometry, material );
+
+                const positions = new Float32Array( PARTICLES * 3 );
+				let p = 0;
+
+				for ( let i = 0; i < PARTICLES; i ++ ) {
+
+					positions[ p ++ ] = ( Math.random() * 2 - 1 ) * 10.0;
+					positions[ p ++ ] = 0; //( Math.random() * 2 - 1 ) * effectController.radius;
+					positions[ p ++ ] = ( Math.random() * 2 - 1 ) * 10.0;
+
+				}
+
+				const uvs = new Float32Array( PARTICLES * 2 );
+				p = 0;
+
+				for ( let j = 0; j < WIDTH; j ++ ) {
+
+					for ( let i = 0; i < WIDTH; i ++ ) {
+
+						uvs[ p ++ ] = i / ( WIDTH - 1 );
+						uvs[ p ++ ] = j / ( WIDTH - 1 );
+
+					}
+
+				}
+
+				geometry.setAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
+				geometry.setAttribute( 'uv', new THREE.BufferAttribute( uvs, 2 ) );
+
+				const particles = new THREE.Points( geometry, material );
+				particles.matrixAutoUpdate = false;
+				particles.updateMatrix();
+
+				scene.add( particles );
+                
+            }
+            
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				insetWidth = window.innerHeight / 4; // square
+				insetHeight = window.innerHeight / 4;
+
+				//camera2.aspect = insetWidth / insetHeight;
+				//camera2.updateProjectionMatrix();
+
+			}
+            
+
+            function getCameraConstant( camera ) {
+
+				return window.innerHeight / ( Math.tan( THREE.MathUtils.DEG2RAD * 0.5 * camera.fov ) / camera.zoom );
+
+			}
+
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				//stats.update();
+
+				// main scene
+
+				renderer.setClearColor( 0x000000, 0 );
+
+				renderer.setViewport( 0, 0, window.innerWidth, window.innerHeight );
+
+				renderer.render( scene, camera );
+
+				// inset scene
+
+				renderer.setClearColor( 0x222222, 1 );
+
+				renderer.clearDepth(); // important!
+
+				renderer.setScissorTest( true );
+
+				renderer.setScissor( 20, 20, insetWidth, insetHeight );
+
+				renderer.setViewport( 20, 20, insetWidth, insetHeight );
+
+				//camera2.position.copy( camera.position );
+				//camera2.quaternion.copy( camera.quaternion );
+
+				//renderer.render( scene, camera2 );
+
+				renderer.setScissorTest( false );
+
+			}
+
+			//
+
+			function initGui() {
+
+				gui = new GUI();
+
+				const param = {
+					'line type': 0,
+					'width (px)': 5,
+					'dashed': false,
+					'dash scale': 1,
+					'dash / gap': 1
+				};
+
+
+				gui.add( param, 'line type', { 'LineGeometry': 0, 'gl.LINE': 1 } ).onChange( function ( val ) {
+
+					switch ( val ) {
+
+						case 0:
+							wireframe.visible = true;
+
+							wireframe1.visible = false;
+
+							break;
+
+						case 1:
+							wireframe.visible = false;
+
+							wireframe1.visible = true;
+
+							break;
+
+					}
+
+				} );
+
+				gui.add( param, 'width (px)', 1, 10 ).onChange( function ( val ) {
+
+					matLine.linewidth = val;
+
+				} );
+
+				gui.add( param, 'dashed' ).onChange( function ( val ) {
+
+					matLine.dashed = val;
+
+					// dashed is implemented as a defines -- not as a uniform. this could be changed.
+					// ... or THREE.LineDashedMaterial could be implemented as a separate material
+					// temporary hack - renderer should do this eventually
+					if ( val ) matLine.defines.USE_DASH = ""; else delete matLine.defines.USE_DASH;
+					matLine.needsUpdate = true;
+
+					wireframe1.material = val ? matLineDashed : matLineBasic;
+
+				} );
+
+				gui.add( param, 'dash scale', 0.5, 1, 0.1 ).onChange( function ( val ) {
+
+					matLine.dashScale = val;
+					matLineDashed.scale = val;
+
+				} );
+
+				gui.add( param, 'dash / gap', { '2 : 1': 0, '1 : 1': 1, '1 : 2': 2 } ).onChange( function ( val ) {
+
+					switch ( val ) {
+
+						case 0:
+							matLine.dashSize = 2;
+							matLine.gapSize = 1;
+
+							matLineDashed.dashSize = 2;
+							matLineDashed.gapSize = 1;
+
+							break;
+
+						case 1:
+							matLine.dashSize = 1;
+							matLine.gapSize = 1;
+
+							matLineDashed.dashSize = 1;
+							matLineDashed.gapSize = 1;
+
+							break;
+
+						case 2:
+							matLine.dashSize = 1;
+							matLine.gapSize = 2;
+
+							matLineDashed.dashSize = 1;
+							matLineDashed.gapSize = 2;
+
+							break;
+
+					}
+
+				} );
+
+			}
+
+
+        </script>
+        
+    </body>
+</html>
